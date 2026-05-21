@@ -1,0 +1,5 @@
+alias df="df -h"
+alias du="du -h"
+alias du1="du -h --max-depth=1"
+alias biggest="du -h . | sort -rh | head -20"
+alias usage="df -h | grep -v tmpfs"

@@ -1,0 +1,7 @@
+alias py="python3"
+alias pip="pip3"
+alias venv="python3 -m venv .venv"
+alias activate="source .venv/bin/activate"
+alias pipi="pip install"
+alias pipr="pip install -r requirements.txt"
+alias pipf="pip freeze > requirements.txt"

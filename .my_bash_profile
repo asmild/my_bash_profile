@@ -1,0 +1,116 @@
+# Adding aliases
+if [ -f ~/.my_aliases ]; then
+	source ~/.my_aliases
+fi
+
+if [ -f ~/.my_credentials ]; then
+        source ~/.my_credentials
+fi
+
+if [ -f ~/.my_variables ]; then
+	source ~/.my_variables
+fi
+
+
+# Update check — runs once per day in background, notifies on next shell open
+_mybash_check_update() {
+  local installed latest
+  installed=$(cat ~/.mybash_version 2>/dev/null)
+  if [ -z "$installed" ] || [ "$installed" = "main" ]; then return; fi
+  latest=$(curl -fsSL --connect-timeout 3 --max-time 5 \
+    "https://api.github.com/repos/asmild/my_bash_profile/tags" 2>/dev/null \
+    | grep -o '"name": "[^"]*"' | head -1 | cut -d'"' -f4)
+  if [ -n "$latest" ] && [ "$latest" != "$installed" ]; then
+    echo "$latest" > ~/.mybash_update_available
+  else
+    rm -f ~/.mybash_update_available
+  fi
+}
+
+if [ -f ~/.mybash_update_available ]; then
+  _new_ver=$(cat ~/.mybash_update_available)
+  echo "mybash update available: $_new_ver"
+  echo "  → curl -fsSL https://raw.githubusercontent.com/asmild/my_bash_profile/main/install.sh | bash"
+  unset _new_ver
+fi
+
+if [ "$(cat ~/.mybash_last_check 2>/dev/null)" != "$(date +%Y%m%d)" ]; then
+  date +%Y%m%d > ~/.mybash_last_check
+  _mybash_check_update & disown
+fi
+
+
+# Colors
+RESET="\[\e[0m\]"
+BLUE="\[\e[38;5;39m\]"
+GREY="\[\e[38;5;244m\]"
+YELLOW="\[\e[38;5;220m\]"
+
+# Git branch
+parse_git_branch() {
+  branch=$(git branch --show-current 2>/dev/null)
+  if [ -n "$branch" ]; then
+    echo -e " \001\e[38;5;82m\002[$branch]\001\e[0m\002"
+  fi
+}
+
+# Prompt
+RED="\[\e[38;5;196m\]"
+
+_update_ps1() {
+  local exit_code=$?
+  local prompt_suffix
+  if [ $exit_code -ne 0 ]; then
+    prompt_suffix="${RED}[${exit_code}]${RESET} "
+  else
+    prompt_suffix=""
+  fi
+  PS1="\n${GREY}[\t]${RESET} ${BLUE}\u${RESET} \w$(parse_git_branch)\n${prompt_suffix}${GREY}\\$ ${RESET}"
+}
+PROMPT_COMMAND=_update_ps1
+
+# Tab completion
+if [[ $- == *i* ]]; then
+  bind 'set show-all-if-ambiguous on'        # show matches on first tab instead of second
+  bind 'set completion-ignore-case on'        # case-insensitive completion
+  bind 'set colored-stats on'                 # color files by type in completion
+  bind 'set visible-stats on'                 # append file type indicator (/ @ * =)
+  bind 'set mark-symlinked-directories on'    # append / to symlinked dirs
+fi
+
+# Shell options
+shopt -s cdspell        # autocorrect minor typos in cd
+shopt -s nocaseglob     # case-insensitive globbing
+shopt -s histappend     # append to history, don't overwrite
+
+# Bash 4.0+ options
+if [ "${BASH_VERSINFO[0]}" -ge 4 ]; then
+  shopt -s autocd       # type directory name to cd into it
+  shopt -s dirspell     # autocorrect directory names during completion
+  shopt -s globstar     # ** matches recursively (e.g. ls **/*.java)
+fi
+
+# History
+HISTSIZE=10000
+HISTFILESIZE=20000
+HISTCONTROL=ignoreboth:erasedups   # no duplicates, no leading-space commands
+HISTTIMEFORMAT="%F %T  "           # timestamp each entry
+
+
+# Colorful man pages
+export LESS_TERMCAP_mb=$'\e[1;31m'
+export LESS_TERMCAP_md=$'\e[1;31m'
+export LESS_TERMCAP_me=$'\e[0m'
+export LESS_TERMCAP_se=$'\e[0m'
+export LESS_TERMCAP_so=$'\e[1;33;44m'
+export LESS_TERMCAP_ue=$'\e[0m'
+export LESS_TERMCAP_us=$'\e[4;1;32m'
+export LESS_TERMCAP_mr=$'\e[7m'
+export LESS_TERMCAP_mh=$'\e[2m'
+export LESS_TERMCAP_ZN=$'\e[74m'
+export LESS_TERMCAP_ZV=$'\e[75m'
+export LESS_TERMCAP_ZO=$'\e[73m'
+export LESS_TERMCAP_ZW=$'\e[75m'
+export MANPAGER='less'
+[[ ":$PATH:" != *":$HOME/.local/bin:"* ]] && export PATH="$HOME/.local/bin:$PATH"
+export PATH="/opt/homebrew/bin:${PATH//:\/opt\/homebrew\/bin/}"

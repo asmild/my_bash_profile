@@ -1,0 +1,6 @@
+alias psa="ps aux"
+alias psg="ps aux | grep"
+alias topcpu="ps aux | sort -rk 3 | head -10"
+alias topmem="ps aux | sort -rk 4 | head -10"
+alias k9="kill -9"
+alias ka="killall"

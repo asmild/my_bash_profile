@@ -1,0 +1,48 @@
+# Navigation
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+# ls
+alias ll="ls -lAFh"
+alias la="ls -A"
+
+# Safety nets
+alias rm="rm -i"
+alias mv="mv -i"
+alias cp="cp -i"
+
+# Misc
+alias h="history"
+alias grep="grep --color=auto"
+alias reload="source ~/.bash_profile"
+aliases() {
+  local modules=(core git docker k8s python node network process disk)
+  local files=(
+    ~/.my_aliases
+    ~/.my_aliases_git
+    ~/.my_aliases_docker
+    ~/.my_aliases_k8s
+    ~/.my_aliases_python
+    ~/.my_aliases_node
+    ~/.my_aliases_network
+    ~/.my_aliases_process
+    ~/.my_aliases_disk
+  )
+  for i in "${!modules[@]}"; do
+    local file="${files[$i]}"
+    [ -f "$file" ] || continue
+    local entries
+    entries=$(grep '^alias ' "$file" | sed "s/alias //" | awk -F'=' '{
+      key = $1
+      $1 = ""
+      sub(/^=/, "", $0)
+      gsub(/^"|"$/, "", $0)
+      printf "  %-18s %s\n", key, $0
+    }')
+    [ -n "$entries" ] || continue
+    echo ""
+    echo "${modules[$i]}:"
+    echo "$entries"
+  done
+}

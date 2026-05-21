@@ -1,0 +1,7 @@
+alias ports="lsof -iTCP -sTCP:LISTEN -P -n"
+alias myip="curl -s ifconfig.me"
+alias localip="ipconfig getifaddr en0"
+alias ping="ping -c 5"
+alias flushdns="sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder"
+alias headers="curl -sI"
+alias wget="curl -O"
