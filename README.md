@@ -50,6 +50,7 @@ During installation you'll see a menu like this:
     [7] network    Network utils (ports, myip, headers...)
     [8] process    Process management (psg, topcpu, k9...)
     [9] disk       Disk usage (df, du1, biggest...)
+    [10] claude    Claude Code (cl, cc, clr, clp, cldsp...)
 
     Select modules (e.g. 1 2 3) or press Enter to skip all:
 ```
@@ -69,6 +70,7 @@ During installation you'll see a menu like this:
 | `.my_aliases_network` | Network utilities |
 | `.my_aliases_process` | Process management |
 | `.my_aliases_disk` | Disk usage utilities |
+| `.my_aliases_claude` | Claude Code shortcuts |
 
 ## What's included
 
@@ -170,6 +172,17 @@ During installation you'll see a menu like this:
 | `mvnp` / `mvncp` | `mvn package` / `mvn clean package` |
 | `mvncps` | `mvn clean package -DskipTests` |
 | `mvnver` | `mvn versions:display-dependency-updates` |
+
+**Aliases — claude**
+
+| Alias | Expands to |
+|---|---|
+| `cl` | `claude` |
+| `cc` | `claude --continue` |
+| `clr` | `claude --resume` |
+| `clp` | `claude --print` |
+| `cldsp` | `claude --dangerously-skip-permissions` |
+| `clf` | `claude --print --dangerously-skip-permissions` |
 
 **Aliases — network**
 

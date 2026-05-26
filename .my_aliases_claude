@@ -1,0 +1,6 @@
+alias cl="claude"
+alias cc="claude --continue"
+alias clr="claude --resume"
+alias clp="claude --print"
+alias cldsp="claude --dangerously-skip-permissions"
+alias clf="claude --print --dangerously-skip-permissions"

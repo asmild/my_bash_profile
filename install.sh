@@ -60,8 +60,9 @@ declare -A MODULES=(
   [network]="Network utils (ports, myip, headers...)"
   [process]="Process management (psg, topcpu, k9...)"
   [disk]="Disk usage (df, du1, biggest...)"
+  [claude]="Claude Code (cl, cc, clr, clp, cldsp...)"
 )
-MODULE_ORDER=(git docker k8s python node maven network process disk)
+MODULE_ORDER=(git docker k8s python node maven network process disk claude)
 
 # ── Environment detection ────────────────────────────────────────────────────
 
@@ -110,35 +111,66 @@ RAW="https://raw.githubusercontent.com/${REPO}/${ref}"
 
 # ── Module selection ─────────────────────────────────────────────────────────
 
+# Detect already active modules
+ACTIVE_MODULES=()
+for module in "${MODULE_ORDER[@]}"; do
+  if grep -qF ".my_aliases_${module}" "$HOME/.my_bash_profile" 2>/dev/null; then
+    ACTIVE_MODULES+=("$module")
+  fi
+done
+
 echo ""
 echo "==> Select optional modules"
 echo "    Core (always installed): navigation, safety nets, misc aliases"
+echo "    [x] = already active. Enter numbers to toggle, or press Enter to keep as is."
 echo ""
 
 i=1
 for module in "${MODULE_ORDER[@]}"; do
-  printf "    [%d] %-10s %s\n" "$i" "$module" "${MODULES[$module]}"
+  mark="[ ]"
+  for active in "${ACTIVE_MODULES[@]}"; do
+    [ "$active" = "$module" ] && mark="[x]" && break
+  done
+  printf "    %2d) %s %-10s %s\n" "$i" "$mark" "$module" "${MODULES[$module]}"
   i=$((i + 1))
 done
 
 echo ""
-printf "    Select modules (e.g. 1 2 3) or press Enter to skip all: "
-read -r selection </dev/tty
+printf "    Toggle modules (e.g. 1 2 3) or press Enter to keep as is: "
+if [ -t 0 ]; then
+  read -r selection
+else
+  read -r selection </dev/tty
+fi
 
-SELECTED_MODULES=()
+# Start from active modules, toggle selected ones
+SELECTED_MODULES=("${ACTIVE_MODULES[@]}")
 if [ -n "$selection" ]; then
   for num in $selection; do
     if [[ "$num" =~ ^[0-9]+$ ]] && [ "$num" -ge 1 ] && [ "$num" -le "${#MODULE_ORDER[@]}" ]; then
-      SELECTED_MODULES+=("${MODULE_ORDER[$((num - 1))]}")
+      module="${MODULE_ORDER[$((num - 1))]}"
+      # Toggle: remove if active, add if not
+      found=false
+      new_selected=()
+      for m in "${SELECTED_MODULES[@]}"; do
+        if [ "$m" = "$module" ]; then
+          found=true
+        else
+          new_selected+=("$m")
+        fi
+      done
+      if [ "$found" = false ]; then
+        new_selected+=("$module")
+      fi
+      SELECTED_MODULES=("${new_selected[@]}")
     fi
   done
 fi
 
+echo ""
 if [ ${#SELECTED_MODULES[@]} -gt 0 ]; then
-  echo ""
-  echo "    Installing modules: ${SELECTED_MODULES[*]}"
+  echo "    Active modules: ${SELECTED_MODULES[*]}"
 else
-  echo ""
   echo "    No optional modules selected"
 fi
 
@@ -196,15 +228,27 @@ fi
 
 # ── Wire module sources into .my_bash_profile ────────────────────────────────
 
-for module in "${SELECTED_MODULES[@]}"; do
-  alias_file="$HOME/.my_aliases_${module}"
+for module in "${MODULE_ORDER[@]}"; do
   source_line="[ -f ~/.my_aliases_${module} ] && source ~/.my_aliases_${module}"
-  if grep -qF ".my_aliases_${module}" "$HOME/.my_bash_profile" 2>/dev/null; then
-    echo "  .my_aliases_${module} — already wired, skipping"
+  is_selected=false
+  for m in "${SELECTED_MODULES[@]}"; do
+    [ "$m" = "$module" ] && is_selected=true && break
+  done
+
+  if [ "$is_selected" = true ]; then
+    if grep -qF ".my_aliases_${module}" "$HOME/.my_bash_profile" 2>/dev/null; then
+      echo "  .my_aliases_${module} — already wired, skipping"
+    else
+      echo "" >> "$HOME/.my_bash_profile"
+      echo "$source_line" >> "$HOME/.my_bash_profile"
+      echo "  .my_aliases_${module} — wired"
+    fi
   else
-    echo "" >> "$HOME/.my_bash_profile"
-    echo "$source_line" >> "$HOME/.my_bash_profile"
-    echo "  .my_aliases_${module} — wired"
+    if grep -qF ".my_aliases_${module}" "$HOME/.my_bash_profile" 2>/dev/null; then
+      grep -vF ".my_aliases_${module}" "$HOME/.my_bash_profile" > "$HOME/.my_bash_profile.tmp"
+      mv "$HOME/.my_bash_profile.tmp" "$HOME/.my_bash_profile"
+      echo "  .my_aliases_${module} — removed"
+    fi
   fi
 done
 
